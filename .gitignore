@@ -3,3 +3,4 @@ graphifyy.egg-info/
 uv.lock
 .hypothesis/
 .venv/
+build/

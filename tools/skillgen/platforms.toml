@@ -1,0 +1,32 @@
+# skillgen platform manifest
+#
+# Build-time only. Platforms restricted to Claude Code and Copilot (plus VS Code).
+
+[platform.claude]
+bucket = "split"
+core = "core"
+skill_dst = "graphify/skill.md"
+refs_dst = "graphify/skills/claude/references"
+description = "Use for any question about a codebase, its architecture, file relationships, or project content — especially when graphify-out/ exists, where the question should be treated as a graphify query first. Local AST and deterministic statistical graph algorithms with zero external calls."
+dispatch = "agent-tool-disk"
+extraction = "verbose"
+shell = "posix"
+claude_md = true
+
+[platform.copilot]
+bucket = "split"
+core = "core"
+skill_dst = "graphify/skill-copilot.md"
+refs_dst = "graphify/skills/copilot/references"
+description = "Use for any question about a codebase, its architecture, file relationships, or project content — especially when graphify-out/ exists, where the question should be treated as a graphify query first. Local AST and deterministic statistical graph algorithms with zero external calls."
+dispatch = "agent-tool-disk"
+extraction = "verbose"
+
+[platform.vscode]
+bucket = "split"
+core = "core"
+skill_dst = "graphify/skill-vscode.md"
+refs_dst = "graphify/skills/vscode/references"
+description = "Use for any question about a codebase, its architecture, file relationships, or project content — especially when graphify-out/ exists, where the question should be treated as a graphify query first. Local AST and deterministic statistical graph algorithms with zero external calls."
+dispatch = "manual-paste"
+extraction = "verbose"

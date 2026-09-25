@@ -1063,7 +1063,10 @@ def _reenter_main() -> None:
 
 
 def dispatch_command(cmd: str) -> None:
-    if cmd == "provider":
+    if cmd == "describe":
+        from graph_fy.describe_arch import cli_describe
+        cli_describe(sys.argv[2:])
+    elif cmd == "provider":
         print("[graph_fy] LLM providers are disabled in this fully local, zero-model build.", file=sys.stderr)
         sys.exit(0)
     elif cmd == "prs":

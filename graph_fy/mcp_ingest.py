@@ -59,7 +59,6 @@ from __future__ import annotations
 
 import json
 import re
-import unicodedata
 from pathlib import Path
 from typing import Any
 
@@ -376,9 +375,7 @@ def _add_edge(
 # ── ID helpers (kept local; mirror extract.py shape) ──────────────────────────
 
 
-def _make_id(*parts: str) -> str:
-    """Build a stable node ID via the single shared recipe (#1378)."""
-    return _shared_make_id(*parts)
+_make_id = _shared_make_id
 
 
 # Canonical recipe imported directly (no import cycle: extractors.base imports

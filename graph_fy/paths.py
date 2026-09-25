@@ -25,6 +25,12 @@ from pathlib import Path, PurePosixPath, PureWindowsPath
 
 graph_fy_OUT = os.environ.get("graph_fy_OUT", "graph_fy_out")
 
+# Categorical palette for community coloring, shared across exporters.
+COMMUNITY_COLORS = [
+    "#4E79A7", "#F28E2B", "#E15759", "#76B7B2", "#59A14F",
+    "#EDC948", "#B07AA1", "#FF9DA7", "#9C755F", "#BAB0AC",
+]
+
 
 def os_replace_with_fallback(src: "str | Path", dst: "str | Path") -> None:
     """``os.replace(src, dst)``, falling back to a copy for a known set of

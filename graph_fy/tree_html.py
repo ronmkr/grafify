@@ -201,75 +201,120 @@ _HTML_TEMPLATE = r"""<!DOCTYPE html>
   <title>{title}</title>
   <style>
     body {{
-      font-family: 'Segoe UI', sans-serif;
+      font-family: Roboto, "Google Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
       margin: 0;
       padding: 0;
-      background: #f9f9f9;
-      color: #333;
+      background-color: #f8f9fa;
+      color: #202124;
+      overflow-x: hidden;
+    }}
+    .app-header {{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      background: #ffffff;
+      border-bottom: 1px solid #dadce0;
+      flex-wrap: wrap;
+      gap: 16px;
+      box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
+    }}
+    .brand-wrap {{
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }}
+    .brand-badge {{
+      background: #0b57d0;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      font-family: Roboto, "Google Sans", sans-serif;
     }}
     h1 {{
-      margin: 20px 0 0 24px;
-      font-size: 2.2rem;
-      font-weight: bold;
-      color: #1e3a56;
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 500;
+      font-family: Roboto, "Google Sans", sans-serif;
+      color: #202124;
+      letter-spacing: -0.01em;
     }}
     .controls {{
-      margin: 20px 0 15px 24px;
+      margin: 16px 24px 0 24px;
+      display: flex;
+      gap: 8px;
     }}
     button {{
-      margin-right: 10px;
-      padding: 8px 18px;
-      background: #007bff;
-      color: #fff;
-      border: none;
-      border-radius: 5px;
-      font-size: 0.95rem;
+      padding: 8px 16px;
+      background: #ffffff;
+      color: #0b57d0;
+      border: 1px solid #dadce0;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      font-family: Roboto, "Google Sans", sans-serif;
       cursor: pointer;
-      transition: background 0.2s ease-in-out;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transition: all 0.15s ease;
+      box-shadow: 0 1px 2px rgba(60,64,67,0.08);
     }}
     button:hover {{
-      background: #0056b3;
+      border-color: #0b57d0;
+      color: #0b57d0;
+      background: #f8fafd;
+      box-shadow: 0 1px 3px rgba(60,64,67,0.15);
     }}
     button:active {{
-      background: #004085;
+      background: #e8f0fe;
+      transform: translateY(1px);
     }}
     #tree-container {{
-      width: calc(100vw - 48px); /* Adjust for body margin/padding */
-      height: 85vh;
+      width: calc(100vw - 48px);
+      height: 80vh;
       overflow: auto;
-      border-radius: 8px;
-      background: #fff;
-      margin-left: 24px;
-      margin-right: 24px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-      border: 1px solid #ddd;
+      border-radius: 12px;
+      background: #ffffff;
+      margin: 16px 24px 24px 24px;
+      box-shadow: 0 1px 3px rgba(60,64,67,0.12), 0 1px 2px rgba(60,64,67,0.24);
+      border: 1px solid #dadce0;
+      position: relative;
     }}
     svg {{
-      background: #fff;
-      border-radius: 8px;
-      display: block; /* Important for D3 */
+      background: #ffffff;
+      border-radius: 12px;
+      display: block;
     }}
     .node circle {{
-      stroke-width: 2.5px;
+      stroke-width: 2px;
+      transition: all 0.2s ease;
     }}
-    .node text {{ /* Base style for the <text> container */
-      font: 13px 'Segoe UI', sans-serif;
-      paint-order: stroke fill; /* Ensures text is readable over lines */
-      stroke: #fff; /* White halo */
-      stroke-width: 3px; /* Halo thickness */
+    .node text {{
+      font: 12px Roboto, -apple-system, sans-serif;
+      fill: #202124;
+      paint-order: stroke fill;
+      stroke: #ffffff;
+      stroke-width: 3.5px;
       stroke-linejoin: round;
-      stroke-opacity: 0.85; /* Halo opacity */
+      stroke-opacity: 0.95;
     }}
     .link {{
       fill: none;
+      stroke: #bdc1c6;
       stroke-opacity: 0.7;
-      stroke-width: 2px;
+      stroke-width: 1.5px;
     }}
   </style>
 </head>
 <body>
-  <h1>{header}</h1>
+  <div class="app-header">
+    <div class="brand-wrap">
+      <span class="brand-badge">graph_fy // TREE</span>
+      <h1>{header}</h1>
+    </div>
+  </div>
   <div class="controls">
     <button onclick="expandAll()">Expand All</button>
     <button onclick="collapseAll()">Collapse All</button>
@@ -328,30 +373,32 @@ _HTML_TEMPLATE = r"""<!DOCTYPE html>
     // a stable colour from a bigger palette so all top-level dirs are
     // distinguishable.
     const PALETTE = [
-      ["#3498DB","#2980B9","#AED6F1"], ["#2ECC71","#27AE60","#A9DFBF"],
-      ["#E74C3C","#C0392B","#F5B7B1"], ["#9B59B6","#8E44AD","#D7BDE2"],
-      ["#F39C12","#D68910","#FAD7A0"], ["#1ABC9C","#117864","#A2D9CE"],
-      ["#34495E","#1B2631","#ABB2B9"], ["#E67E22","#BA4A00","#F5CBA7"],
-      ["#16A085","#0E6655","#A2D9CE"], ["#D35400","#A04000","#EDBB99"],
-      ["#7F8C8D","#566573","#D5DBDB"], ["#C0392B","#7B241C","#F5B7B1"],
-      ["#2E86C1","#1B4F72","#A9CCE3"], ["#28B463","#196F3D","#A9DFBF"],
-      ["#AF7AC5","#6C3483","#D2B4DE"],
+      ["#1a73e8","#174ea6","#d2e3fc"],
+      ["#1e8e3e","#137333","#ceead6"],
+      ["#d93025","#a50e0e","#fad2cf"],
+      ["#f9ab00","#b06000","#feefc3"],
+      ["#9334e6","#681da8","#f3e8fd"],
+      ["#0097a7","#006064","#b2ebf2"],
+      ["#e8710a","#b34700","#fedfc8"],
+      ["#e52592","#9c166f","#fce4ec"],
+      ["#3f51b5","#283593","#c5cae9"],
+      ["#00acc1","#00838f","#e0f7fa"],
+      ["#5f6368","#3c4043","#dadce0"],
+      ["#c2185b","#880e4f","#f8bbd0"],
+      ["#1565c0","#0d47a1","#bbdefb"],
+      ["#2e7d32","#1b5e20","#c8e6c9"],
+      ["#7b1fa2","#4a148c","#e1bee7"],
     ];
-    const phaseColors = {{ "Root": {{ fill: "#4A4A4A", stroke: "#333333", collapsedFill: "#6C757D" }},
-                          "Default": {{ fill: "#BDC3C7", stroke: "#95A5A6", collapsedFill: "#ECF0F1" }} }};
+    const phaseColors = {{ "Root": {{ fill: "#1a73e8", stroke: "#174ea6", collapsedFill: "#d2e3fc" }},
+                          "Default": {{ fill: "#bdc1c6", stroke: "#9aa0a6", collapsedFill: "#e8eaed" }} }};
     (initialJsonData.children || []).forEach((c, i) => {{
       const pal = PALETTE[i % PALETTE.length];
       phaseColors[c.name] = {{ fill: pal[0], stroke: pal[1], collapsedFill: pal[2] }};
     }});
 
-    const levelSpecificPalettes = {{
-      0: {{ fill: "#4A4A4A", stroke: "#333333", collapsedFill: "#6C757D" }},
-      2: {{ fill: "#6ab04c", stroke: "#508a38", collapsedFill: "#a3d391" }},
-      3: {{ fill: "#f0932b", stroke: "#d0730f", collapsedFill: "#f6c07e" }},
-      4: {{ fill: "#be2edd", stroke: "#a01cb3", collapsedFill: "#e08bf2" }},
-      5: {{ fill: "#00a8ff", stroke: "#007ac1", collapsedFill: "#74d2ff" }},
-      6: {{ fill: "#e55039", stroke: "#c23620", collapsedFill: "#f09a8d" }},
-      default: {{ fill: "#747d8c", stroke: "#57606f", collapsedFill: "#a4b0be" }}
+    const getPalette = depth => {{
+      const pal = PALETTE[depth % PALETTE.length];
+      return {{ fill: pal[0], stroke: pal[1], collapsedFill: pal[2] }};
     }};
 
     const svgElement = d3.select("#tree-svg");
@@ -422,27 +469,13 @@ _HTML_TEMPLATE = r"""<!DOCTYPE html>
 
       nodeUpdate.select('circle').attr('r', 8.5)
         .style('fill', d => {{
-            let palette;
-            if (d.depth === 0) {{
-                palette = levelSpecificPalettes[0];
-            }} else if (d.depth === 1) {{
-                palette = phaseColors[d.data.originalStageName] || phaseColors.Default;
-            }} else {{
-                palette = levelSpecificPalettes[d.depth] || levelSpecificPalettes.default;
-            }}
+            const palette = (d.depth === 1) ? (phaseColors[d.data.originalStageName] || phaseColors.Default) : getPalette(d.depth);
             if (d._children) return palette.collapsedFill;
             if (d.children) return palette.fill;
-            return "#fff";
+            return "#ffffff";
         }})
         .style('stroke', d => {{
-            let palette;
-            if (d.depth === 0) {{
-                palette = levelSpecificPalettes[0];
-            }} else if (d.depth === 1) {{
-                palette = phaseColors[d.data.originalStageName] || phaseColors.Default;
-            }} else {{
-                palette = levelSpecificPalettes[d.depth] || levelSpecificPalettes.default;
-            }}
+            const palette = (d.depth === 1) ? (phaseColors[d.data.originalStageName] || phaseColors.Default) : getPalette(d.depth);
             return palette.stroke;
         }});
       nodeUpdate.select('text').style("fill-opacity", 1).call(wrapText, 380);
@@ -470,8 +503,8 @@ _HTML_TEMPLATE = r"""<!DOCTYPE html>
 
     function wrapText(textElements, maxWidth) {{
         const textPartColors = {{
-            name: '#343a40',
-            count: '#0056b3'
+            name: '#202124',
+            count: '#0b57d0'
         }};
         const countRegex = /(\s\(Total Count: \d+\))$/;
 

@@ -44,6 +44,7 @@ Outputs written to `graph_fy_out/`:
 - `index.db` — SQLite FTS5 BM25 search index with sub-token splitting.
 - `GRAPH_REPORT.md` — Plain-language architectural summary and god nodes.
 - `graph.html` — Force-directed interactive visualizer.
+- `architecture.html` — Interactive repo architecture pipeline diagram (`graph_fy describe`).
 - `wiki/` — Agent-crawlable hierarchical community articles (`--wiki`).
 
 ---
@@ -94,6 +95,13 @@ graph_fy query "auth flow" --rag-prompt       # prompt-ready context block with 
 graph_fy path "Frontend" "Database"           # shortest cross-layer dependency path
 graph_fy explain "UserService"                # BM25, graph-hop, and centrality breakdown
 graph_fy impact "APIRoute"                    # predictive blast radius risk & affected tests
+
+# Architecture & Pipeline Visualizations
+graph_fy describe                             # interactive repo architecture diagram (architecture.html)
+graph_fy describe --format mermaid            # emit repo architecture Mermaid flowchart
+graph_fy describe --focus "<subsystem>"       # isolate architecture stage to a specific community
+graph_fy export callflow-html                 # generate execution callflow matrix visualizer (callflow.html)
+graph_fy export tree-html                     # generate hierarchical filesystem & symbol tree (tree.html)
 
 # Assistant Setup & Integrations
 graph_fy install --platform gemini            # install skill for Antigravity / Gemini CLI

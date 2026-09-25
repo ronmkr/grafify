@@ -579,6 +579,8 @@ def _run_cli() -> None:
         print("    --max-children N        cap children per node (default 200)")
         print("    --top-k-edges N         per-symbol outbound edges in inspector (default 12)")
         print("    --label NAME            project label in header")
+        print("  describe arch           emit rich interactive architecture & stage-by-stage AST flow HTML")
+        print("                          [--graph PATH] [--output HTML] [--focus TERM] [--json] [--open]")
         print("  extract <path>          headless full extraction (AST + semantic LLM) for CI/scripts")
         print("    --backend B             gemini|kimi|claude|openai|deepseek|ollama (default: whichever API key is set)")
         print("                            openai also reaches self-hosted OpenAI-compatible servers (llama.cpp,")
@@ -647,7 +649,7 @@ def _run_cli() -> None:
     # (e.g. "cursor install --help" was silently installing into Cursor, #821).
     # Exempt: free-text commands (user string may contain these tokens), and
     # "install"/"uninstall" which have their own per-subcommand help handlers.
-    _FREE_TEXT_CMDS = {"query", "explain", "path", "flow", "save-result", "install", "uninstall"}
+    _FREE_TEXT_CMDS = {"query", "explain", "path", "flow", "save-result", "install", "uninstall", "describe"}
     if cmd not in _FREE_TEXT_CMDS and any(a in {"-h", "--help", "-?"} for a in sys.argv[2:]):
         print(f"Run 'graph_fy --help' for full usage.")
         return

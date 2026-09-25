@@ -17,6 +17,7 @@ from graph_fy.security import sanitize_label
 from graph_fy.analyze import _node_community_map
 from graph_fy.build import edge_data
 from graph_fy.paths import (
+    COMMUNITY_COLORS,
     os_replace_with_fallback,
     stem_filename_budget,
     write_json_atomic,
@@ -165,8 +166,6 @@ def _yaml_str(s: str) -> str:
             out.append(ch)
     return "".join(out)
 
-
-from graph_fy.exporters.base import COMMUNITY_COLORS  # noqa: E402,F401
 
 from graph_fy.exporters.html import to_html  # noqa: E402,F401
 

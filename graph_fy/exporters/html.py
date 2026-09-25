@@ -1,11 +1,10 @@
 """html — moved verbatim from graph_fy/export.py."""
 from __future__ import annotations
 
-from graph_fy.exporters.base import COMMUNITY_COLORS  # noqa: E402,F401
 from pathlib import Path
 import html as _html
 from graph_fy.analyze import _node_community_map
-from graph_fy.paths import write_text_atomic
+from graph_fy.paths import COMMUNITY_COLORS, write_text_atomic
 import json
 import networkx as nx
 from graph_fy.security import sanitize_label
@@ -31,74 +30,143 @@ def _viz_node_limit() -> int:
 
 def _html_styles() -> str:
     return """<style>
+  :root {
+    --bg: #f8f9fa;
+    --surface: #ffffff;
+    --surface-variant: #f1f3f4;
+    --border: #dadce0;
+    --border-accent: #dadce0;
+    --text: #202124;
+    --muted: #5f6368;
+    --accent: #0b57d0;
+    --accent-hover: #0842a0;
+    --accent-glow: rgba(11, 87, 208, 0.15);
+    --coral: #d93025;
+    --success: #137333;
+    --warning: #b06000;
+    --purple: #9334e6;
+  }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #0f0f1a; color: #e0e0e0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; display: flex; height: 100vh; overflow: hidden; }
-  #graph { flex: 1; }
-  #sidebar { width: 340px; min-width: 300px; max-width: 450px; background: #1a1a2e; border-left: 1px solid #2a2a4e; display: flex; flex-direction: column; overflow: hidden; }
-  #sidebar-tabs { display: flex; background: #121224; border-bottom: 1px solid #2a2a4e; flex-shrink: 0; }
-  .tab-btn { flex: 1; background: none; border: none; border-bottom: 2px solid transparent; color: #8a8aa8; padding: 9px 2px; font-size: 11px; font-weight: 600; cursor: pointer; text-align: center; text-transform: uppercase; letter-spacing: 0.03em; transition: all 0.2s; white-space: nowrap; }
-  .tab-btn:hover { color: #e0e0e0; background: #181830; }
-  .tab-btn.active { color: #818cf8; border-bottom-color: #6366f1; background: #1e1e38; }
-  .tab-pane { display: none; flex: 1; flex-direction: column; overflow-y: auto; padding: 12px; }
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: Roboto, "Google Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+  #graph { flex: 1; background: #ffffff; }
+  #sidebar {
+    width: 360px;
+    min-width: 300px;
+    max-width: 480px;
+    background: #ffffff;
+    border-left: 1px solid var(--border);
+    box-shadow: -2px 0 8px rgba(60,64,67,0.08);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  #sidebar-tabs {
+    display: flex;
+    background: #ffffff;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .tab-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--muted);
+    padding: 12px 4px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-family: Roboto, "Google Sans", sans-serif;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+  .tab-btn:hover { color: var(--text); background: var(--surface-variant); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); background: transparent; font-weight: 600; }
+  .tab-pane { display: none; flex: 1; flex-direction: column; overflow-y: auto; padding: 14px; background: #ffffff; }
   .tab-pane.active { display: flex; }
-  #search-wrap { padding: 0 0 10px 0; border-bottom: 1px solid #2a2a4e; }
-  #search { width: 100%; background: #0f0f1a; border: 1px solid #3a3a5e; color: #e0e0e0; padding: 7px 10px; border-radius: 6px; font-size: 13px; outline: none; }
-  #search:focus { border-color: #4E79A7; }
-  #search-results { max-height: 140px; overflow-y: auto; padding: 4px 0; border-bottom: 1px solid #2a2a4e; display: none; }
-  .search-item { padding: 4px 6px; cursor: pointer; border-radius: 4px; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .search-item:hover { background: #2a2a4e; }
-  #info-panel { padding: 10px 0; min-height: 140px; }
-  #info-panel h3 { font-size: 13px; color: #aaa; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
-  #info-content { font-size: 13px; color: #ccc; line-height: 1.6; }
-  #info-content .field { margin-bottom: 5px; }
-  #info-content .field b { color: #e0e0e0; }
-  #info-content .empty { color: #555; font-style: italic; }
-  .neighbor-link { display: block; padding: 2px 6px; margin: 2px 0; border-radius: 3px; cursor: pointer; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-left: 3px solid #333; }
-  .neighbor-link:hover { background: #2a2a4e; }
-  #neighbors-list { max-height: 160px; overflow-y: auto; margin-top: 4px; }
+  #search-wrap { padding: 0 0 10px 0; border-bottom: 1px solid var(--border); }
+  #search {
+    width: 100%;
+    background: #f1f3f4;
+    border: 1px solid transparent;
+    color: var(--text);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-family: Roboto, sans-serif;
+    outline: none;
+    transition: all 0.15s;
+  }
+  #search:focus {
+    background: #ffffff;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-glow);
+  }
+  #search-results { max-height: 140px; overflow-y: auto; padding: 4px 0; border-bottom: 1px solid var(--border); display: none; }
+  .search-item { padding: 6px 10px; cursor: pointer; border-radius: 6px; font-size: 12px; font-family: Roboto, sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
+  .search-item:hover { background: #e8f0fe; color: var(--accent); }
+  #info-panel { padding: 12px 0; min-height: 140px; }
+  #info-panel h3 { font-size: 12px; color: var(--accent); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.04em; font-family: Roboto, "Google Sans", sans-serif; font-weight: 600; }
+  #info-content { font-size: 12.5px; color: var(--muted); line-height: 1.6; }
+  #info-content .field { margin-bottom: 6px; font-family: Roboto, sans-serif; color: var(--muted); }
+  #info-content .field b { color: var(--text); font-weight: 500; }
+  #info-content .empty { color: #80868b; font-style: italic; }
+  .neighbor-link { display: block; padding: 5px 8px; margin: 3px 0; border-radius: 6px; cursor: pointer; font-size: 11.5px; font-family: Roboto, sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-left: 3px solid var(--accent); background: #f8f9fa; color: var(--text); }
+  .neighbor-link:hover { background: #e8f0fe; color: var(--accent); }
+  #neighbors-list { max-height: 160px; overflow-y: auto; margin-top: 6px; }
   #legend-wrap { flex: 1; overflow-y: auto; padding: 0; }
-  #legend-wrap h3 { font-size: 13px; color: #aaa; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
-  .legend-item { display: flex; align-items: center; gap: 8px; padding: 4px 0; cursor: pointer; border-radius: 4px; font-size: 12px; }
-  .legend-item:hover { background: #2a2a4e; padding-left: 4px; }
+  #legend-wrap h3 { font-size: 12px; color: var(--accent); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.04em; font-family: Roboto, "Google Sans", sans-serif; font-weight: 600; }
+  .legend-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; cursor: pointer; border-radius: 6px; font-size: 12px; font-family: Roboto, sans-serif; color: var(--text); }
+  .legend-item:hover { background: #f1f3f4; }
   .legend-item.dimmed { opacity: 0.35; }
-  .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
   .legend-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .legend-count { color: #666; font-size: 11px; }
-  #stats { padding: 10px 14px; border-top: 1px solid #2a2a4e; font-size: 11px; color: #555; flex-shrink: 0; }
+  .legend-count { color: var(--muted); font-size: 11px; }
+  #stats { padding: 10px 14px; border-top: 1px solid var(--border); font-size: 11px; font-family: Roboto, sans-serif; color: var(--muted); flex-shrink: 0; background: #f8f9fa; }
   #legend-controls { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; padding: 4px 0; }
-  #legend-controls label { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px; color: #aaa; user-select: none; }
-  #legend-controls label:hover { color: #e0e0e0; }
-  .legend-cb, #select-all-cb { appearance: none; -webkit-appearance: none; width: 14px; height: 14px; border: 1.5px solid #3a3a5e; border-radius: 3px; background: #0f0f1a; cursor: pointer; position: relative; flex-shrink: 0; }
-  .legend-cb:checked, #select-all-cb:checked { background: #4E79A7; border-color: #4E79A7; }
-  .legend-cb:checked::after, #select-all-cb:checked::after { content: ''; position: absolute; left: 3.5px; top: 1px; width: 4px; height: 7px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
-  #select-all-cb:indeterminate { background: #4E79A7; border-color: #4E79A7; }
-  #select-all-cb:indeterminate::after { content: ''; position: absolute; left: 2px; top: 5px; width: 8px; height: 2px; background: #fff; border: none; transform: none; }
-  .action-btn { background: #2a2a4e; color: #e0e0e0; border: 1px solid #3a3a5e; border-radius: 4px; padding: 5px 8px; font-size: 11px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px; transition: background 0.15s, border-color 0.15s; }
-  .action-btn:hover { background: #3a3a6e; border-color: #6366f1; }
-  .action-btn.primary { background: #4f46e5; border-color: #6366f1; color: #fff; }
-  .action-btn.primary:hover { background: #4338ca; }
-  .schema-box { background: #121220; border: 1px solid #2a2a42; border-radius: 4px; padding: 8px; font-family: monospace; font-size: 10px; color: #a5b4fc; margin-bottom: 8px; max-height: 120px; overflow-y: auto; white-space: pre-wrap; line-height: 1.4; }
-  #sql-input { width: 100%; background: #0f0f1a; border: 1px solid #3a3a5e; color: #e0e0e0; font-family: monospace; font-size: 11px; padding: 6px 8px; border-radius: 4px; resize: vertical; outline: none; margin-bottom: 6px; }
-  #sql-input:focus { border-color: #6366f1; }
-  .results-table-wrap { max-height: 180px; overflow: auto; border: 1px solid #2a2a4e; border-radius: 4px; margin-top: 6px; background: #0f0f1a; }
-  .query-table { width: 100%; border-collapse: collapse; font-size: 11px; text-align: left; }
-  .query-table th { background: #14142b; color: #94a3b8; padding: 4px 6px; border-bottom: 1px solid #2a2a4e; position: sticky; top: 0; }
-  .query-table td { padding: 4px 6px; border-bottom: 1px solid #1e1e38; color: #cbd5e1; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .query-table tr:hover td { background: #242442; cursor: pointer; color: #fff; }
-  .risk-badge { display: inline-block; padding: 2px 7px; border-radius: 10px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
-  .risk-LOW { background: #064e3b; color: #6ee7b7; border: 1px solid #059669; }
-  .risk-MEDIUM { background: #78350f; color: #fde68a; border: 1px solid #d97706; }
-  .risk-HIGH { background: #7c2d12; color: #fdba74; border: 1px solid #ea580c; }
-  .risk-CRITICAL { background: #7f1d1d; color: #fca5a5; border: 1px solid #dc2626; }
-  .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 8px 0; }
-  .metric-card { background: #121224; border: 1px solid #2a2a4e; border-radius: 4px; padding: 6px; text-align: center; }
-  .metric-val { font-size: 14px; font-weight: bold; color: #e0e0e0; }
-  .metric-label { font-size: 10px; color: #8a8aa8; text-transform: uppercase; }
-  .closure-item { padding: 3px 6px; font-size: 11px; border-left: 3px solid #6366f1; margin: 2px 0; border-radius: 2px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .closure-item:hover { background: #2a2a4e; }
-  .closure-item.is-test { border-left-color: #38bdf8; }
-  .closure-item.is-api { border-left-color: #ec4899; }
-  .closure-item.is-iac { border-left-color: #f59e0b; }
+  #legend-controls label { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 11.5px; font-family: Roboto, sans-serif; color: var(--muted); user-select: none; }
+  #legend-controls label:hover { color: var(--text); }
+  .legend-cb, #select-all-cb { appearance: none; -webkit-appearance: none; width: 16px; height: 16px; border: 1.5px solid var(--border); border-radius: 4px; background: #ffffff; cursor: pointer; position: relative; flex-shrink: 0; }
+  .legend-cb:checked, #select-all-cb:checked { background: var(--accent); border-color: var(--accent); }
+  .legend-cb:checked::after, #select-all-cb:checked::after { content: ''; position: absolute; left: 4.5px; top: 2px; width: 4px; height: 7px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+  #select-all-cb:indeterminate { background: var(--accent); border-color: var(--accent); }
+  #select-all-cb:indeterminate::after { content: ''; position: absolute; left: 3px; top: 6px; width: 8px; height: 2px; background: #fff; border: none; transform: none; }
+  .action-btn { background: #ffffff; color: var(--accent); border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; font-size: 11.5px; font-weight: 500; font-family: Roboto, "Google Sans", sans-serif; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px; transition: all 0.15s; }
+  .action-btn:hover { background: #f8fafd; border-color: var(--accent); }
+  .action-btn.primary { background: var(--accent); border-color: transparent; color: #fff; font-weight: 500; }
+  .action-btn.primary:hover { background: var(--accent-hover); box-shadow: 0 1px 3px rgba(60,64,67,0.3); }
+  .schema-box { background: #f8f9fa; border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-family: ui-monospace, monospace; font-size: 10.5px; color: #174ea6; margin-bottom: 8px; max-height: 120px; overflow-y: auto; white-space: pre-wrap; line-height: 1.4; }
+  #sql-input { width: 100%; background: #f8f9fa; border: 1px solid var(--border); color: var(--text); font-family: ui-monospace, monospace; font-size: 11.5px; padding: 8px 10px; border-radius: 8px; resize: vertical; outline: none; margin-bottom: 6px; }
+  #sql-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-glow); background: #ffffff; }
+  .results-table-wrap { max-height: 180px; overflow: auto; border: 1px solid var(--border); border-radius: 8px; margin-top: 6px; background: #ffffff; }
+  .query-table { width: 100%; border-collapse: collapse; font-size: 11.5px; font-family: Roboto, sans-serif; text-align: left; }
+  .query-table th { background: #f1f3f4; color: var(--text); font-weight: 600; padding: 6px 10px; border-bottom: 1px solid var(--border); position: sticky; top: 0; text-transform: uppercase; font-size: 10px; }
+  .query-table td { padding: 6px 10px; border-bottom: 1px solid #f1f3f4; color: var(--text); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .query-table tr:hover td { background: #e8f0fe; cursor: pointer; color: var(--accent); }
+  .risk-badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; font-family: Roboto, sans-serif; }
+  .risk-LOW { background: #ceead6; color: #137333; border: 1px solid #a8dab5; }
+  .risk-MEDIUM { background: #feefc3; color: #b06000; border: 1px solid #fdd663; }
+  .risk-HIGH { background: #fedfc8; color: #b34700; border: 1px solid #fcbb8b; }
+  .risk-CRITICAL { background: #fad2cf; color: #c5221f; border: 1px solid #f28b82; }
+  .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; }
+  .metric-card { background: #ffffff; border: 1px solid var(--border); border-radius: 8px; padding: 10px; text-align: center; box-shadow: 0 1px 2px rgba(60,64,67,0.08); }
+  .metric-val { font-size: 16px; font-weight: 600; color: var(--accent); font-family: Roboto, "Google Sans", sans-serif; }
+  .metric-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 2px; }
+  .closure-item { padding: 5px 8px; font-size: 11px; font-family: Roboto, sans-serif; border-left: 3px solid var(--accent); margin: 3px 0; border-radius: 4px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: #f8f9fa; color: var(--text); }
+  .closure-item:hover { background: #e8f0fe; color: var(--accent); }
+  .closure-item.is-test { border-left-color: #1a73e8; }
+  .closure-item.is-api { border-left-color: #d93025; }
+  .closure-item.is-iac { border-left-color: #ea8600; }
 </style>"""
 
 def _hyperedge_script(hyperedges_json: str) -> str:
@@ -678,7 +746,7 @@ btnHighlightSql.addEventListener('click', () => {{
     const isMatch = matchIds.has(String(n.id));
     return {{
       id: n.id,
-      color: isMatch ? {{ background: '#6366f1', border: '#a5b4fc' }} : {{ background: n.color.background, border: n.color.border, opacity: 0.15 }},
+      color: isMatch ? {{ background: '#0b57d0', border: '#1a73e8' }} : {{ background: n.color.background, border: n.color.border, opacity: 0.15 }},
       borderWidth: isMatch ? 3 : 1
     }};
   }}));
@@ -865,7 +933,7 @@ function runBlastRadius(targetId) {{
 
   const scoreBar = document.getElementById('blast-score-bar');
   scoreBar.style.width = `${{impact.riskScore * 100}}%`;
-  scoreBar.style.background = impact.riskTier === 'CRITICAL' ? '#dc2626' : (impact.riskTier === 'HIGH' ? '#ea580c' : (impact.riskTier === 'MEDIUM' ? '#d97706' : '#22c55e'));
+  scoreBar.style.background = impact.riskTier === 'CRITICAL' ? '#d93025' : (impact.riskTier === 'HIGH' ? '#ea8600' : (impact.riskTier === 'MEDIUM' ? '#f9ab00' : '#137333'));
   document.getElementById('blast-score-val').textContent = impact.riskScore.toFixed(3);
 
   document.getElementById('blast-downstream-count').textContent = impact.downstreamCount;
@@ -911,11 +979,11 @@ function runBlastRadius(targetId) {{
   const updates = RAW_NODES.map(n => {{
     const sId = String(n.id);
     if (sId === String(targetId)) {{
-      return {{ id: n.id, color: {{ background: '#f59e0b', border: '#38bdf8' }}, borderWidth: 4 }};
+      return {{ id: n.id, color: {{ background: '#f9ab00', border: '#1a73e8' }}, borderWidth: 4 }};
     }} else if (affectedSet.has(sId)) {{
       const isTest = impact.affectedTests.some(t => String(t.id) === sId);
       const isApi = impact.affectedApis.some(a => String(a.id) === sId);
-      const bColor = isTest ? '#38bdf8' : (isApi ? '#ec4899' : '#ef4444');
+      const bColor = isTest ? '#1a73e8' : (isApi ? '#d93025' : '#ea8600');
       return {{ id: n.id, color: {{ background: n.color.background, border: bColor }}, borderWidth: 3 }};
     }} else {{
       return {{ id: n.id, color: {{ background: n.color.background, border: n.color.border, opacity: 0.15 }} }};
@@ -1268,7 +1336,7 @@ def to_html(
             "label": label,
             "color": {"background": color, "border": color, "highlight": {"background": "#ffffff", "border": color}},
             "size": round(size, 1),
-            "font": {"size": font_size, "color": "#ffffff"},
+            "font": {"size": font_size, "color": "#202124", "strokeWidth": 2, "strokeColor": "#ffffff"},
             "title": _html.escape(label),
             "community": cid,
             "community_name": sanitize_label((community_labels or {}).get(cid, f"Community {cid}")),
@@ -1381,9 +1449,9 @@ def to_html(
   </div>
 
   <div id="tab-sql" class="tab-pane">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-      <h3 style="font-size:12px; text-transform:uppercase; color:#aaa;">In-Browser SQL Query Engine</h3>
-      <button id="toggle-schema-btn" class="action-btn" style="font-size:10px; padding:2px 6px;">Schema</button>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <h3 style="font-size:12px; text-transform:uppercase; color:var(--muted); font-weight:600;">In-Browser SQL Query Engine</h3>
+      <button id="toggle-schema-btn" class="action-btn" style="font-size:10px; padding:2px 8px;">Schema</button>
     </div>
     <div id="db-schema-card" class="schema-box" style="display:none;">
 -- Client-Side WebAssembly (WASM) / SQL Explorer Schema --
@@ -1408,8 +1476,8 @@ TABLE edges (
 );
     </div>
 
-    <div style="margin-bottom:6px;">
-      <select id="sql-presets" style="width:100%; background:#0f0f1a; border:1px solid #3a3a5e; color:#ccc; padding:4px; font-size:11px; border-radius:4px;">
+    <div style="margin-bottom:8px;">
+      <select id="sql-presets" style="width:100%; background:#ffffff; border:1px solid var(--border); color:var(--text); padding:6px 8px; font-size:11.5px; border-radius:8px; outline:none;">
         <option value="">-- Preset SQL Queries --</option>
         <option value="SELECT id, label, degree, file_type FROM nodes ORDER BY degree DESC LIMIT 10">Top Degree Hub Nodes</option>
         <option value="SELECT id, label, source_file FROM nodes WHERE label LIKE '%test%' OR source_file LIKE '%test%'">All Test Nodes</option>
@@ -1426,12 +1494,12 @@ TABLE edges (
       <button id="btn-clear-sql" class="action-btn">Clear</button>
     </div>
 
-    <div style="border-top:1px solid #2a2a4e; padding-top:8px; margin-top:4px;">
-      <h4 style="font-size:11px; text-transform:uppercase; color:#888; margin-bottom:6px;">Ad-Hoc Predicate Filter</h4>
-      <input id="filter-label" type="text" placeholder="Filter by label substring..." style="width:100%; background:#0f0f1a; border:1px solid #3a3a5e; color:#e0e0e0; padding:4px 6px; border-radius:4px; font-size:11px; margin-bottom:4px;">
+    <div style="border-top:1px solid var(--border); padding-top:8px; margin-top:4px;">
+      <h4 style="font-size:11px; text-transform:uppercase; color:var(--muted); margin-bottom:6px; font-weight:600;">Ad-Hoc Predicate Filter</h4>
+      <input id="filter-label" type="text" placeholder="Filter by label substring..." style="width:100%; background:#ffffff; border:1px solid var(--border); color:var(--text); padding:6px 8px; border-radius:8px; font-size:11.5px; margin-bottom:6px; outline:none;">
       <div style="display:flex; gap:4px; margin-bottom:6px;">
-        <input id="filter-type" type="text" placeholder="Type (e.g. py, api)" style="flex:1; background:#0f0f1a; border:1px solid #3a3a5e; color:#e0e0e0; padding:4px 6px; border-radius:4px; font-size:11px;">
-        <select id="filter-comm-select" style="flex:1; background:#0f0f1a; border:1px solid #3a3a5e; color:#e0e0e0; padding:4px 6px; border-radius:4px; font-size:11px;">
+        <input id="filter-type" type="text" placeholder="Type (e.g. py, api)" style="flex:1; background:#ffffff; border:1px solid var(--border); color:var(--text); padding:6px 8px; border-radius:8px; font-size:11.5px; outline:none;">
+        <select id="filter-comm-select" style="flex:1; background:#ffffff; border:1px solid var(--border); color:var(--text); padding:6px 8px; border-radius:8px; font-size:11.5px; outline:none;">
           <option value="">All Communities</option>
         </select>
       </div>
@@ -1442,9 +1510,9 @@ TABLE edges (
     </div>
 
     <div id="query-results-wrap" style="margin-top:8px; flex:1; display:flex; flex-direction:column; min-height:140px;">
-      <div id="query-status" style="font-size:11px; color:#888; margin-bottom:4px;">Ready. Enter query or choose preset.</div>
+      <div id="query-status" style="font-size:11px; color:var(--muted); margin-bottom:4px;">Ready. Enter query or choose preset.</div>
       <div id="query-results" class="results-table-wrap" style="display:none;"></div>
-      <div id="query-actions" style="display:none; margin-top:4px; gap:4px;">
+      <div id="query-actions" style="display:none; margin-top:6px; gap:6px;">
         <button id="btn-highlight-sql" class="action-btn" style="flex:1; font-size:10px;">Highlight Matches</button>
         <button id="btn-isolate-sql" class="action-btn" style="flex:1; font-size:10px;">Isolate in Graph</button>
       </div>
@@ -1452,10 +1520,10 @@ TABLE edges (
   </div>
 
   <div id="tab-blast" class="tab-pane">
-    <h3 style="font-size:12px; text-transform:uppercase; color:#aaa; margin-bottom:8px;">Predictive Blast Radius &amp; Impact</h3>
+    <h3 style="font-size:12px; text-transform:uppercase; color:var(--muted); margin-bottom:8px; font-weight:600;">Predictive Blast Radius &amp; Impact</h3>
     <div style="margin-bottom:8px;">
-      <label style="font-size:11px; color:#888; display:block; margin-bottom:4px;">Target Symbol / Node:</label>
-      <select id="blast-target-select" style="width:100%; background:#0f0f1a; border:1px solid #3a3a5e; color:#e0e0e0; padding:5px 8px; border-radius:4px; font-size:12px;">
+      <label style="font-size:11px; color:var(--muted); display:block; margin-bottom:4px;">Target Symbol / Node:</label>
+      <select id="blast-target-select" style="width:100%; background:#ffffff; border:1px solid var(--border); color:var(--text); padding:6px 8px; border-radius:8px; font-size:12px; outline:none;">
         <option value="">-- Select or Click a Node --</option>
       </select>
     </div>
@@ -1466,14 +1534,14 @@ TABLE edges (
 
     <div id="blast-results-panel" style="display:none;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-        <span style="font-size:12px; font-weight:600;" id="blast-target-name">-</span>
+        <span style="font-size:12px; font-weight:600; color:var(--text);" id="blast-target-name">-</span>
         <span id="blast-risk-badge" class="risk-badge risk-LOW">LOW</span>
       </div>
-      <div style="background:#14142b; border-radius:4px; height:6px; overflow:hidden; margin-bottom:8px;">
-        <div id="blast-score-bar" style="background:#22c55e; height:100%; width:0%; transition:width 0.3s;"></div>
+      <div style="background:#e8eaed; border-radius:4px; height:6px; overflow:hidden; margin-bottom:8px;">
+        <div id="blast-score-bar" style="background:#137333; height:100%; width:0%; transition:width 0.3s;"></div>
       </div>
-      <div style="font-size:11px; color:#aaa; margin-bottom:8px;">
-        Risk Score: <b id="blast-score-val" style="color:#fff;">0.000</b> / 1.000
+      <div style="font-size:11px; color:var(--muted); margin-bottom:8px;">
+        Risk Score: <b id="blast-score-val" style="color:var(--text);">0.000</b> / 1.000
       </div>
 
       <div class="metrics-grid">
@@ -1486,28 +1554,28 @@ TABLE edges (
           <div class="metric-label">Communities</div>
         </div>
         <div class="metric-card">
-          <div class="metric-val" id="blast-test-count" style="color:#38bdf8;">0</div>
+          <div class="metric-val" id="blast-test-count" style="color:#1a73e8;">0</div>
           <div class="metric-label">Tests</div>
         </div>
         <div class="metric-card">
-          <div class="metric-val" id="blast-api-count" style="color:#ec4899;">0</div>
+          <div class="metric-val" id="blast-api-count" style="color:#d93025;">0</div>
           <div class="metric-label">APIs</div>
         </div>
       </div>
 
-      <div id="blast-explanation" style="font-size:11px; color:#94a3b8; line-height:1.4; margin-bottom:10px; padding:6px; background:#141426; border-radius:4px;"></div>
+      <div id="blast-explanation" style="font-size:11px; color:var(--text); line-height:1.4; margin-bottom:10px; padding:8px; background:#f8f9fa; border:1px solid var(--border); border-radius:6px;"></div>
 
       <div id="blast-breakdown-wrap">
         <div id="blast-apis-section" style="display:none; margin-bottom:8px;">
-          <div style="font-size:11px; font-weight:600; color:#ec4899; margin-bottom:4px;">Affected APIs (<span id="blast-apis-num">0</span>)</div>
+          <div style="font-size:11px; font-weight:600; color:#d93025; margin-bottom:4px;">Affected APIs (<span id="blast-apis-num">0</span>)</div>
           <div id="blast-apis-list" style="max-height:90px; overflow-y:auto;"></div>
         </div>
         <div id="blast-tests-section" style="display:none; margin-bottom:8px;">
-          <div style="font-size:11px; font-weight:600; color:#38bdf8; margin-bottom:4px;">Affected Tests (<span id="blast-tests-num">0</span>)</div>
+          <div style="font-size:11px; font-weight:600; color:#1a73e8; margin-bottom:4px;">Affected Tests (<span id="blast-tests-num">0</span>)</div>
           <div id="blast-tests-list" style="max-height:90px; overflow-y:auto;"></div>
         </div>
         <div id="blast-closure-section" style="margin-bottom:8px;">
-          <div style="font-size:11px; font-weight:600; color:#cbd5e1; margin-bottom:4px;">Downstream Closure (<span id="blast-closure-num">0</span>)</div>
+          <div style="font-size:11px; font-weight:600; color:var(--text); margin-bottom:4px;">Downstream Closure (<span id="blast-closure-num">0</span>)</div>
           <div id="blast-closure-list" style="max-height:120px; overflow-y:auto;"></div>
         </div>
       </div>
@@ -1515,12 +1583,12 @@ TABLE edges (
   </div>
 
   <div id="tab-slice" class="tab-pane">
-    <h3 style="font-size:12px; text-transform:uppercase; color:#aaa; margin-bottom:8px;">Neighborhood Slicing</h3>
-    <div style="font-size:11px; color:#888; margin-bottom:6px;">
-      Focused Node: <b id="slice-node-label" style="color:#e0e0e0;">(None selected)</b>
+    <h3 style="font-size:12px; text-transform:uppercase; color:var(--muted); margin-bottom:8px; font-weight:600;">Neighborhood Slicing</h3>
+    <div style="font-size:11px; color:var(--muted); margin-bottom:6px;">
+      Focused Node: <b id="slice-node-label" style="color:var(--text);">(None selected)</b>
     </div>
     <div style="margin-bottom:12px;">
-      <label style="font-size:11px; color:#aaa; display:block; margin-bottom:4px;">Hop Distance:</label>
+      <label style="font-size:11px; color:var(--muted); display:block; margin-bottom:4px;">Hop Distance:</label>
       <div style="display:flex; gap:4px;">
         <button class="action-btn slice-hop-btn" data-hops="0" style="flex:1;">All</button>
         <button class="action-btn slice-hop-btn" data-hops="1" style="flex:1;">1-Hop</button>
@@ -1529,9 +1597,9 @@ TABLE edges (
       </div>
     </div>
 
-    <div style="border-top:1px solid #2a2a4e; padding-top:8px; margin-top:8px;">
-      <h3 style="font-size:12px; text-transform:uppercase; color:#aaa; margin-bottom:8px;">Community Isolation</h3>
-      <select id="slice-comm-select" style="width:100%; background:#0f0f1a; border:1px solid #3a3a5e; color:#e0e0e0; padding:5px; border-radius:4px; font-size:11px; margin-bottom:6px;">
+    <div style="border-top:1px solid var(--border); padding-top:8px; margin-top:8px;">
+      <h3 style="font-size:12px; text-transform:uppercase; color:var(--muted); margin-bottom:8px; font-weight:600;">Community Isolation</h3>
+      <select id="slice-comm-select" style="width:100%; background:#ffffff; border:1px solid var(--border); color:var(--text); padding:6px 8px; border-radius:8px; font-size:11.5px; margin-bottom:6px; outline:none;">
         <option value="">-- Choose Community --</option>
       </select>
       <div style="display:flex; gap:6px;">

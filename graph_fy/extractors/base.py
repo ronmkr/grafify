@@ -51,8 +51,7 @@ _LANGUAGE_BUILTIN_GLOBALS: frozenset[str] = frozenset({
 })
 
 
-def _make_id(*parts: str) -> str:
-    return make_id(*parts)
+_make_id = make_id
 
 
 def _file_stem(path: Path) -> str:

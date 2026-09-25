@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import ast
-import re
-import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 from collections.abc import Sequence
@@ -379,13 +377,7 @@ def resolve_cross_file_raw_calls(
     return resolved
 
 
-def _bash_make_id(*parts: str) -> str:
-    """Bash symbol node ID via the single shared recipe (#1378).
-
-    Previously an inline copy to dodge an import cycle; ``graph_fy.ids`` is
-    dependency-free, so it can be imported directly.
-    """
-    return _shared_make_id(*parts)
+_bash_make_id = _shared_make_id
 
 
 from graph_fy.extractors.base import _file_stem as _bash_file_stem  # canonical recipe (no import cycle: base imports only graph_fy.ids)

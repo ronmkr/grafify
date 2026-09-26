@@ -230,5 +230,7 @@ headroom wrap claude
 ---
 
 ## 8. Companion Guides & Deep Dives
+* [**Complete Skills & Tools Installation Guide**](file:///Users/raunak/Documents/projects/graphify/docs/SKILLS_INSTALLATION_GUIDE.md): Step-by-step setup for Matt Pocock skills, `graph_fy`, `headroom`, `serena`, and MCP configurations.
 * [**The $10 Spec-Driven Enterprise Setup**](file:///Users/raunak/Documents/projects/graphify/docs/SPEC_DRIVEN_ENTERPRISE_SETUP.md): Tool configs (`headroom`, `graph_fy`, `serena`), `mcp.json`, and agent rules.
 * [**From DDD to Spec to Code Blueprint**](file:///Users/raunak/Documents/projects/graphify/docs/DDD_TO_SPEC_TO_CODE_BLUEPRINT.md): Full lifecycle incorporating Domain-Driven Design, Matt Pocock's `/grill-me` pattern, Jira tickets, and TDD execution.
+* [**Massive Monorepo Feature Addition Playbook**](file:///Users/raunak/Documents/projects/graphify/docs/MONOREPO_FEATURE_ADDITION_PLAYBOOK.md): Subsystem boundary pruning, isolated package TDD, and downstream blast radius checking in 100k+ file monorepos.

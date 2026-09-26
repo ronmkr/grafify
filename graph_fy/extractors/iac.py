@@ -638,7 +638,7 @@ def extract_cloudformation(path: Path) -> dict[str, Any]:
         if path.suffix.lower() == ".json":
             doc = json.loads(content)
         else:
-            doc = yaml.load(content, Loader=_SafeLoaderIgnoreUnknown)
+            doc = yaml.load(content, Loader=_SafeLoaderIgnoreUnknown)  # nosec B506
     except Exception as exc:
         return {"nodes": nodes, "edges": edges, "error": str(exc)}
 

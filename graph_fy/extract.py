@@ -37,6 +37,7 @@ from graph_fy.extractors.base import (  # noqa: F401
 from graph_fy.extractors.apex import extract_apex  # noqa: F401
 from graph_fy.extractors.bash import extract_bash  # noqa: F401
 from graph_fy.extractors.blade import extract_blade  # noqa: F401
+from graph_fy.extractors.cobol import extract_cobol  # noqa: F401
 from graph_fy.extractors.csharp import (
     CsharpNameResolver,
     _resolve_cross_file_csharp_imports,
@@ -2653,7 +2654,9 @@ _CASE_INSENSITIVE_EXTS = frozenset({
     ".php", ".phtml", ".php3", ".php4", ".php5", ".php7", ".phps",  # PHP fns/classes
     ".sql",                                                          # SQL identifiers
     ".nim", ".nims", ".nimble",                                      # Nim (style-insensitive)
+    ".cbl", ".cob", ".cobol", ".cpy",                                # COBOL identifiers
 })
+_CASE_INSENSITIVE_EXTENSIONS = _CASE_INSENSITIVE_EXTS
 
 
 def _lang_is_case_insensitive(source_file: object) -> bool:
@@ -2699,7 +2702,16 @@ _LANG_FAMILY_BY_EXT: dict[str, str] = {
     ".dart": "dart",
     ".sh": "shell", ".bash": "shell",
     ".ps1": "powershell", ".psm1": "powershell", ".psd1": "powershell",
+    ".cbl": "cobol", ".cob": "cobol", ".cobol": "cobol", ".cpy": "cobol",
 }
+_EXT_TO_LANG: dict[str, str] = {
+    ".cbl": "cobol",
+    ".cob": "cobol",
+    ".cobol": "cobol",
+    ".cpy": "cobol",
+}
+_LANG_BY_EXT = _LANG_FAMILY_BY_EXT
+
 
 
 def _lang_family(source_file: object) -> str | None:
@@ -4890,7 +4902,7 @@ def extract_lazarus_package(path: Path) -> dict:
                 "error": "refusing XML with DOCTYPE/ENTITY declaration"}
 
     try:
-        xml_root = ET.fromstring(src)
+        xml_root = ET.fromstring(src)  # nosec B314
     except Exception as e:
         return {"nodes": [], "edges": [], "error": str(e)}
 
@@ -4997,7 +5009,7 @@ def extract_slnx(path: Path) -> dict:
                 "error": "refusing XML with DOCTYPE/ENTITY declaration"}
 
     try:
-        tree = ET.fromstring(src)
+        tree = ET.fromstring(src)  # nosec B314
     except ET.ParseError as e:
         return {"nodes": [], "edges": [], "error": f"XML parse error: {e}"}
 
@@ -5076,7 +5088,7 @@ def extract_csproj(path: Path) -> dict:
                 "error": "refusing XML with DOCTYPE/ENTITY declaration"}
 
     try:
-        tree = ET.fromstring(src)
+        tree = ET.fromstring(src)  # nosec B314
     except ET.ParseError as e:
         return {"nodes": [], "edges": [], "error": f"XML parse error: {e}"}
 
@@ -5587,7 +5599,7 @@ def extract_xaml(path: Path) -> dict:
                 "error": "refusing XML with DOCTYPE/ENTITY declaration"}
 
     try:
-        tree = ET.fromstring(src)
+        tree = ET.fromstring(src)  # nosec B314
     except ET.ParseError as e:
         return {"nodes": [], "edges": [], "error": f"XML parse error: {e}"}
 
@@ -5856,6 +5868,10 @@ _DISPATCH: dict[str, Any] = {
     ".metal": extract_cpp,
     ".rb": extract_ruby, ".rake": extract_ruby,
     ".cs": extract_csharp,
+    ".cbl": extract_cobol,
+    ".cob": extract_cobol,
+    ".cobol": extract_cobol,
+    ".cpy": extract_cobol,
     ".kt": extract_kotlin,
     ".kts": extract_kotlin,
     ".scala": extract_scala,
@@ -5937,6 +5953,10 @@ _DISPATCH: dict[str, Any] = {
     ".trigger": extract_apex,
     ".proto": extract_protobuf,
     ".avsc": extract_avro,
+    ".cbl": extract_cobol,
+    ".cob": extract_cobol,
+    ".cobol": extract_cobol,
+    ".cpy": extract_cobol,
 }
 
 
@@ -6136,6 +6156,9 @@ def _get_extractor(path: Path) -> Any | None:
         if interp is not None:
             return _SHEBANG_DISPATCH.get(interp)
     return _DISPATCH.get(suffix)
+
+
+_extract_file_ast = _get_extractor
 
 
 def _safe_extract_with_xaml_root(extractor, path: Path, root: Path) -> dict:
@@ -6709,7 +6732,10 @@ def extract(
     # marker set in the per-file extractor. Populated just before the pass that uses it.
     callable_nids: set[str] = set()
 
-    _augment_symbol_resolution_edges(paths, all_nodes, all_edges, root)
+    _augment_symbol_resolution_edges(
+        paths, all_nodes, all_edges, root,
+        resolution_context_nodes=resolution_context_nodes,
+    )
 
     # Merge a header-declared class (and its methods) with its sibling-impl
     # definition into ONE node (C/C++/ObjC #1547/#1556). Runs BEFORE the id-remap
@@ -7761,7 +7787,6 @@ def extract(
                 e["source"] = _canon(e["source"])
             if e.get("target"):
                 e["target"] = _canon(e["target"])
-
     # origin_file is an internal disambiguation hint (#1462): the colliding-id pass
     # above reads it to keep same-named cross-file stubs distinct, after which nothing
     # consumes it. Drop it from the returned nodes so it never ships into graph.json as

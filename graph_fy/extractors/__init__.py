@@ -13,6 +13,7 @@ from typing import Callable
 from graph_fy.extractors.apex import extract_apex
 from graph_fy.extractors.bash import extract_bash
 from graph_fy.extractors.blade import extract_blade
+from graph_fy.extractors.cobol import extract_cobol
 from graph_fy.extractors.commonlisp import extract_commonlisp
 from graph_fy.extractors.dart import extract_dart
 from graph_fy.extractors.dm import extract_dm, extract_dmf, extract_dmi, extract_dmm
@@ -38,6 +39,7 @@ LANGUAGE_EXTRACTORS: dict[str, Callable[[Path], dict]] = {
     "apex": extract_apex,
     "bash": extract_bash,
     "blade": extract_blade,
+    "cobol": extract_cobol,
     "commonlisp": extract_commonlisp,
     "dart": extract_dart,
     "delphi_form": extract_delphi_form,
@@ -65,3 +67,40 @@ LANGUAGE_EXTRACTORS: dict[str, Callable[[Path], dict]] = {
     "verilog": extract_verilog,
     "zig": extract_zig,
 }
+
+EXTRACTORS: dict[str, Callable[[Path], dict]] = LANGUAGE_EXTRACTORS
+
+__all__ = [
+    "LANGUAGE_EXTRACTORS",
+    "EXTRACTORS",
+    "extract_apex",
+    "extract_bash",
+    "extract_blade",
+    "extract_cobol",
+    "extract_commonlisp",
+    "extract_dart",
+    "extract_delphi_form",
+    "extract_dm",
+    "extract_dmf",
+    "extract_dmi",
+    "extract_dmm",
+    "extract_elixir",
+    "extract_fortran",
+    "extract_go",
+    "extract_json",
+    "extract_julia",
+    "extract_lazarus_form",
+    "extract_markdown",
+    "extract_objc",
+    "extract_pascal",
+    "extract_pdf",
+    "extract_powershell",
+    "extract_powershell_manifest",
+    "extract_razor",
+    "extract_rust",
+    "extract_sln",
+    "extract_sql",
+    "extract_terraform",
+    "extract_verilog",
+    "extract_zig",
+]

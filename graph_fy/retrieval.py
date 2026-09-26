@@ -793,7 +793,7 @@ def query(
                 SELECT node_id, label, source_path, source_location, pagerank, degree, content
                 FROM node_metadata
                 WHERE node_id IN ({placeholders});
-                """,
+                """,  # nosec B608
                 chunk,
             )
             for row in cur.fetchall():

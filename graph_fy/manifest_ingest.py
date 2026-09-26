@@ -288,9 +288,15 @@ def _parse_gomod(text: str) -> dict | None:
 
 
 def _parse_pom(text: str) -> dict | None:
+    lowered = text.lower()
+    if "<!doctype" in lowered or "<!entity" in lowered:
+        return None
     # Drop the default namespace so findtext/findall don't need the {uri} prefix.
     text = re.sub(r'\sxmlns="[^"]*"', '', text, count=1)
-    root = ET.fromstring(text)
+    try:
+        root = ET.fromstring(text)  # nosec B314
+    except Exception:
+        return None
     aid = root.findtext("artifactId")
     gid = root.findtext("groupId")
     if not aid:

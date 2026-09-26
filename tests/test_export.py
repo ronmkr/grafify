@@ -1087,3 +1087,33 @@ console.log(bad);
         proc = subprocess.run([node, str(js)], capture_output=True, text=True, timeout=60)
     assert proc.returncode == 0, proc.stderr
     assert proc.stdout.strip() == "0", f"geometry violations: {proc.stdout.strip()}"
+
+
+def test_to_html_tooltips_preserve_special_characters_without_html_entities(tmp_path):
+    import networkx as nx
+    G = nx.Graph()
+    special_node_label = 'Node & "Quote" <Tag> \'Apos\''
+    special_edge_rel = 'calls & <checks> "fast" \'slow\''
+    G.add_node("n1", label=special_node_label, source_file="a.py", community=0)
+    G.add_node("n2", label="Target", source_file="b.py", community=0)
+    G.add_edge("n1", "n2", relation=special_edge_rel, confidence="EXTRACTED")
+
+    out = tmp_path / "graph.html"
+    to_html(G, {0: ["n1", "n2"]}, str(out))
+    content = out.read_text(encoding="utf-8")
+
+    nodes = {n["id"]: n for n in _vis_nodes_from_html(content)}
+    assert nodes["n1"]["title"] == special_node_label
+    for entity in ("&amp;", "&lt;", "&gt;", "&#x27;", "&#39;", "&quot;"):
+        assert entity not in nodes["n1"]["title"]
+
+    m = re.search(r"const RAW_EDGES = (\[.*?\]);", content, re.DOTALL)
+    assert m, "RAW_EDGES not found in HTML"
+    edges = json.loads(m.group(1).replace("<\\/", "</"))
+    assert len(edges) == 1
+    edge_title = edges[0]["title"]
+    assert special_edge_rel in edge_title
+    for entity in ("&amp;", "&lt;", "&gt;", "&#x27;", "&#39;", "&quot;"):
+        assert entity not in edge_title
+    assert "30 * Math.sqrt(i) * Math.cos(i * 2.4)" in content
+

@@ -36,6 +36,7 @@ from graph_fy.serve import (
     _community_header,
     _search_tokens,
     _shortest_path_text,
+    _node_arg,
 )
 
 
@@ -1827,3 +1828,14 @@ def test_query_graph_text_seeds_the_node_whose_rationale_answers_a_why_question(
     )
     header = text.split("\n\n", 1)[0]
     assert "FAB visibility rule" in header, header
+
+
+def test_node_arg_accepts_label_node_id_and_id_aliases():
+    assert _node_arg({"label": "Foo()"}) == "Foo()"
+    assert _node_arg({"node_id": "Foo()"}) == "Foo()"
+    assert _node_arg({"id": "Foo()"}) == "Foo()"
+    assert _node_arg({}) == ""
+    assert _node_arg({"label": "", "node_id": "bar"}) == "bar"
+    assert _node_arg({"other": 123}) == ""
+
+

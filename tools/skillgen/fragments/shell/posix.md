@@ -30,8 +30,14 @@ fi
 # Write interpreter path for all subsequent steps (persists across invocations)
 mkdir -p graph_fy_out
 "$PYTHON" -c "import sys; open('graph_fy_out/.graphify_python', 'w', encoding='utf-8').write(sys.executable)"
-# Save scan root so `graph_fy update` (no args) knows where to look next time
-echo "$(cd INPUT_PATH && pwd)" > graph_fy_out/.graphify_root
+# Save scan root so `graph_fy update` (no args) knows where to look next time.
+# INPUT_PATH is passed through a quoted heredoc, never substituted into the
+# command line itself: a bare `cd INPUT_PATH` (or an unquoted heredoc, which
+# still expands $()/backticks in its body) would let a malicious path execute
+# as shell code the moment this line runs.
+"$PYTHON" -c "import os, sys; out_path = os.path.abspath('graph_fy_out/.graphify_root'); os.chdir(sys.stdin.readline().rstrip('\n')); open(out_path, 'w', encoding='utf-8').write(os.getcwd())" <<'GRAPHIFY_ROOT_EOF' || exit 1
+INPUT_PATH
+GRAPHIFY_ROOT_EOF
 # Ensure graph_fy_out/ is in .gitignore if in a git repository
 if [ -d .git ] || git rev-parse --git-dir >/dev/null 2>&1; then
     if [ ! -f .gitignore ] || ! grep -q "graph_fy_out" .gitignore 2>/dev/null; then

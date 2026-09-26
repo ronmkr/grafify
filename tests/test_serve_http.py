@@ -429,3 +429,28 @@ def test_get_node_and_get_neighbors_agree_on_ambiguous_label(tmp_path):
         # A unique label still resolves cleanly on get_node.
         unique = _call_tool(client, headers, "get_node", {"label": "unique_helper"}, rid=4)
         assert "Node: unique_helper" in unique, unique
+
+
+def test_get_node_and_get_neighbors_accept_node_id_and_id_aliases(tmp_path):
+    app = serve_mod._build_http_app(_ambiguous_graph_file(tmp_path), json_response=True)
+    with _client(app) as client:
+        headers = _init_session(client)
+        # Test node_id alias
+        res_node_id = _call_tool(client, headers, "get_node", {"node_id": "unique_helper"}, rid=2)
+        assert "Node: unique_helper" in res_node_id
+
+        # Test id alias
+        res_id = _call_tool(client, headers, "get_node", {"id": "unique_helper"}, rid=3)
+        assert "Node: unique_helper" in res_id
+
+        # Test get_neighbors with node_id alias
+        res_neighbors = _call_tool(client, headers, "get_neighbors", {"node_id": "unique_helper"}, rid=4)
+        assert "Neighbors of unique_helper:" in res_neighbors
+
+        # Test missing label/node_id/id
+        missing_node = _call_tool(client, headers, "get_node", {}, rid=5)
+        assert missing_node == "Provide a node label or id (accepted keys: label, node_id, id)."
+
+        missing_neighbors = _call_tool(client, headers, "get_neighbors", {}, rid=6)
+        assert missing_neighbors == "Provide a node label or id (accepted keys: label, node_id, id)."
+
